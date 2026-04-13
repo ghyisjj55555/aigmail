@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>權限聲明 - CorpMail AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <style>body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }</style>
+</head>
+<body class="h-screen flex items-center justify-center p-4">
+    <div class="w-full max-w-lg bg-white rounded-3xl shadow-2xl p-8 md:p-10" x-data="{ agreed: false }">
+        <div class="flex items-center space-x-3 mb-6">
+            <div class="bg-amber-100 p-2 rounded-lg text-amber-600">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+            </div>
+            <h2 class="text-2xl font-bold text-gray-800">數據權限與隱私聲明</h2>
+        </div>
+
+        <div class="bg-gray-50 rounded-xl p-6 text-sm text-gray-600 leading-relaxed mb-8 h-64 overflow-y-auto border border-gray-100">
+            <p class="font-bold mb-2">在使用 CorpMail AI 之前，請閱讀以下條款：</p>
+            <ol class="list-decimal pl-4 space-y-3">
+                <li><strong>郵件讀取權限：</strong>本系統將使用 AI 分析您的郵件內容以生成摘要。</li>
+                <li><strong>數據加密：</strong>所有分析過程均經過企業級加密，我們不會存儲您的原始密碼。</li>
+                <li><strong>合規性：</strong>您同意遵守企業內部資安管理辦法，不將機密資訊外洩予第三方。</li>
+                <li><strong>AI 限制：</strong>AI 生成的摘要僅供參考，關鍵業務決策請務必查閱原始郵件。</li>
+            </ol>
+            <p class="mt-4 text-xs text-gray-400 italic">最後更新日期：2026年4月</p>
+        </div>
+
+        <label class="flex items-center space-x-3 cursor-pointer mb-8 group">
+            <input type="checkbox" x-model="agreed" class="w-5 h-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 transition-all">
+            <span class="text-gray-700 font-medium group-hover:text-indigo-600 transition-colors">我已閱讀並同意以上所有權限聲明內容</span>
+        </label>
+
+        <div class="flex space-x-4">
+            <button @click="window.history.back()" class="flex-1 px-6 py-3 border border-gray-200 text-gray-500 rounded-xl hover:bg-gray-50 transition-all font-medium">取消</button>
+            <button 
+                @click="if(agreed) { window.location.href = 'index.html' }" 
+                :disabled="!agreed"
+                :class="agreed ? 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-200' : 'bg-gray-300 cursor-not-allowed'"
+                class="flex-[2] px-6 py-3 text-white rounded-xl shadow-lg transition-all font-bold"
+            >
+                確認並進入系統
+            </button>
+        </div>
+    </div>
+</body>
+</html>
