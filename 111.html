@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enterprise AI Mail - 客戶管理系統</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <style>
+        [x-cloak] { display: none !important; }
+        body { font-family: "PingFang TC", "Microsoft JhengHei", sans-serif; }
+        .unread-dot { width: 8px; height: 8px; background-color: #4f46e5; border-radius: 50%; }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 antialiased" x-data="gmailApp()" x-init="init()" x-cloak>
+
+    <div class="flex h-screen w-full overflow-hidden">
+        
+        <div class="w-64 border-r bg-white p-4 flex flex-col space-y-4 shadow-sm z-10">
+            <div class="flex items-center space-x-2 px-2 pb-4">
+                <div class="bg-indigo-600 p-1.5 rounded-lg shadow-lg shadow-indigo-200">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                </div>
+                <h1 class="text-xl font-bold text-gray-800 tracking-tight">CorpMail AI</h1>
+            </div>
+            
+            <button class="flex items-center justify-center space-x-2 bg-indigo-600 hover:bg-indigo-700 text-white py-3 px-6 rounded-xl shadow-md transition-all font-medium">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                <span>新郵件</span>
+            </button>
+
+            <nav class="flex flex-col space-y-1">
+                <template x-for="item in menu">
+                    <div @click="activeLabel = item.label" 
+                         :class="activeLabel === item.label ? 'bg-indigo-50 text-indigo-700 font-bold' : 'hover:bg-gray-100 text-gray-600'" 
+                         class="flex items-center justify-between px-4 py-2.5 rounded-lg cursor-pointer transition-colors text-sm">
+                        <div class="flex items-center space-x-3">
+                            <span x-text="item.icon"></span>
+                            <span x-text="item.label"></span>
+                        </div>
+                        <span x-show="item.label === '收件匣' && unreadCount > 0" 
+                              class="bg-indigo-100 text-indigo-600 px-2 py-0.5 rounded-full text-xs font-bold" 
+                              x-text="unreadCount"></span>
+                    </div>
+                </template>
+            </nav>
+        </div>
+
+        <div class="w-96 border-r flex flex-col bg-white shadow-sm">
+            <div class="p-4 border-b bg-gray-50/50 flex items-center justify-between">
+                <div class="relative flex-1 mr-2">
+                    <span class="absolute left-3 top-2.5 text-gray-400">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    </span>
+                    <input type="text" placeholder="搜尋郵件..." class="w-full bg-white border border-gray-200 rounded-lg py-2 pl-10 pr-4 focus:ring-2 focus:ring-indigo-400 outline-none text-sm" x-model="search" />
+                </div>
+                <button class="p-2 hover:bg-gray-200 rounded-lg text-gray-500" title="重新整理">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                </button>
+            </div>
+
+            <div class="overflow-y-auto flex-1 bg-white">
+                <template x-for="mail in filteredEmails" :key="mail.id">
+                    <div
+                        @click="selectEmail(mail)"
+                        :class="selectedEmail?.id === mail.id ? 'bg-indigo-50 border-l-4 border-l-indigo-600' : 'hover:bg-gray-50 border-b border-gray-100'"
+                        class="p-4 cursor-pointer transition-all relative"
+                    >
+                        <div class="flex justify-between items-start mb-1">
+                            <div class="flex items-center space-x-2">
+                                <template x-if="mail.unread">
+                                    <div class="unread-dot"></div>
+                                </template>
+                                <span :class="mail.unread ? 'font-black text-gray-900' : 'font-medium text-gray-600'" class="text-sm" x-text="mail.sender"></span>
+                            </div>
+                            <span class="text-[10px] text-gray-400" x-text="mail.time"></span>
+                        </div>
+                        <div :class="mail.unread ? 'font-bold text-gray-900' : 'text-gray-600'" class="text-sm truncate" x-text="mail.subject"></div>
+                        <div class="text-xs text-gray-400 truncate mt-1" x-text="mail.preview"></div>
+                        <div class="mt-2 flex space-x-2">
+                            <span :class="getTagClass(mail.category)" class="text-[9px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider" x-text="mail.category"></span>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+        <div class="flex-1 bg-white flex flex-col relative overflow-hidden">
+            <template x-if="selectedEmail">
+                <div class="flex flex-col h-full animate-in fade-in duration-300">
+                    <div class="px-8 py-3 border-b flex justify-between items-center bg-gray-50/30">
+                        <div class="flex space-x-6 text-gray-500">
+                            <button class="hover:text-indigo-600 flex items-center space-x-1 text-xs"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path></svg><span>回覆</span></button>
+                            <button class="hover:text-red-600 flex items-center space-x-1 text-xs"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg><span>刪除</span></button>
+                            <button class="hover:text-amber-500 flex items-center space-x-1 text-xs"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.382-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path></svg><span>標記</span></button>
+                        </div>
+                        <div class="text-[10px] text-gray-400 font-mono bg-gray-100 px-2 py-1 rounded" x-text="'Ref ID: ' + selectedEmail.ref"></div>
+                    </div>
+
+                    <div class="p-8 overflow-y-auto flex-1">
+                        <div class="max-w-4xl mx-auto">
+                            <h2 class="text-2xl font-bold text-gray-900 mb-8" x-text="selectedEmail.subject"></h2>
+                            
+                            <div class="flex items-center justify-between mb-8 border-b pb-6">
+                                <div class="flex items-center space-x-4">
+                                    <div class="w-12 h-12 bg-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-xl" x-text="selectedEmail.sender[0]"></div>
+                                    <div>
+                                        <div class="font-bold text-gray-900 text-base" x-text="selectedEmail.sender"></div>
+                                        <div class="text-gray-500 text-xs" x-text="'<' + selectedEmail.email + '>'"></div>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-xs text-gray-500" x-text="selectedEmail.fullTime"></div>
+                                    <div class="text-[10px] text-indigo-500 font-bold mt-1">透過企業安全加密傳送</div>
+                                </div>
+                            </div>
+
+                            <div class="text-gray-700 leading-relaxed text-base min-h-[300px]" style="white-space: pre-line;" x-text="selectedEmail.content"></div>
+
+                            <div class="mt-12 bg-slate-900 rounded-2xl p-6 shadow-2xl text-white">
+                                <div class="flex items-center justify-between mb-6">
+                                    <div class="flex items-center space-x-2">
+                                        <div class="p-1 bg-indigo-500 rounded-md">
+                                            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                                        </div>
+                                        <h3 class="font-bold tracking-wide text-indigo-100">AI 智能業務助理</h3>
+                                    </div>
+                                    <button @click="summarizeEmail()" :disabled="isSummarizing" class="bg-indigo-600 hover:bg-indigo-500 px-5 py-2 rounded-lg text-xs font-bold transition-all disabled:opacity-50">
+                                        <span x-text="isSummarizing ? '分析內容中...' : '生成摘要與行動建議'"></span>
+                                    </button>
+                                </div>
+
+                                <div x-show="summary" x-transition class="bg-slate-800/80 rounded-xl p-5 border border-slate-700">
+                                    <pre class="whitespace-pre-wrap font-sans text-indigo-50 leading-7 text-sm" x-text="summary"></pre>
+                                </div>
+                                <div x-show="!summary && !isSummarizing" class="text-slate-500 text-sm text-center py-4 italic border border-dashed border-slate-700 rounded-xl">
+                                    點擊上方按鈕，AI 將自動為您提取本郵件的關鍵點與待辦事項
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </template>
+
+            <template x-if="!selectedEmail">
+                <div class="flex-1 flex flex-col items-center justify-center bg-gray-50/50">
+                    <img src="https://illustrations.popsy.co/gray/opening-envelope.svg" class="w-64 h-64 opacity-50 mb-6" alt="No selection">
+                    <p class="text-gray-400 font-medium">請選擇一封客戶信件進行查閱</p>
+                </div>
+            </template>
+        </div>
+    </div>
+
+    <script>
+        function gmailApp() {
+            return {
+                search: '',
+                selectedEmail: null,
+                summary: '',
+                isSummarizing: false,
+                activeLabel: '收件匣',
+                unreadCount: 0,
+                menu: [
+                    { icon: '📥', label: '收件匣' },
+                    { icon: '⭐️', label: '重要標記' },
+                    { icon: '📈', label: '銷售機會' },
+                    { icon: '🛠', label: '技術支援' },
+                    { icon: '📄', label: '草稿箱' }
+                ],
+                emails: [
+                    { id: 1, unread: true, sender: "台積電 TSMC - 採購組", email: "procurement@tsmc.com", subject: "【緊急】N3 製程設備報價單調整請求", content: "王經理您好：\n\n關於貴司昨日送達的設備報價單（編號：EP-2026-99），我司技術團隊在審查規格後，發現部分感測組件需提升至 A12 等級。請貴司針對此項規格更新重新核算報價，並於今日下班前提供最新版本，以便送交董事會審議。", preview: "王經理您好，關於貴司昨日送達的設備報價單...", time: "09:12 AM", fullTime: "2026/04/13 09:12", category: "報價單", ref: "EP-2026-99" },
+                    { id: 2, unread: true, sender: "AWS Cloud Support", email: "support@amazon.com", subject: "【警告】您的企業雲端實例運算資源異常提醒", content: "尊敬的客戶：\n\n監測到您的企業帳戶 (ID: 771-002) 下的亞太區執行個體 CPU 使用率已連續 3 小時超過 95%。這可能導致您的企業應用服務中斷，建議立即擴展資源或檢查程式碼是否存在死循環。", preview: "監測到您的企業帳戶 CPU 使用率已連續 3 小時超過 95%...", time: "08:45 AM", fullTime: "2026/04/13 08:45", category: "技術警報", ref: "AWS-ERR-404" },
+                    { id: 3, unread: false, sender: "國泰世華銀行 - 法金部", email: "corp_service@cathaybk.com.tw", subject: "2026 年度企業長期貸款優惠利率通知", content: "林董事長您好：\n\n感謝貴司長年對本行的支持。針對貴司今年度的產線擴張計畫，本行法金部特別核定了一組優於市場的貸款利率方案，年化利率僅 1.68%。詳細計畫書已附件於隨信中，歡迎隨時撥冗討論細節。", preview: "針對貴司今年度的產線擴張計畫，本行核定了優於市場的利率方案...", time: "昨天", fullTime: "2026/04/12 15:30", category: "財務合約", ref: "CUB-LN-2026" },
+                    { id: 4, unread: true, sender: "HR 人資部", email: "hr@company.corp", subject: "【通知】本週五全體員工安全消防演習安排", content: "各位同仁：\n\n為配合大樓消防安檢，本週五 (4/17) 下午 2:00 將舉行全體演習。屆時請務必配合指示疏散至一樓廣場。各部門主管請確認所有人員撤離，演習期間網路服務將暫停供電測試。", preview: "本週五下午將舉行消防演習，請各部門配合指示疏散...", time: "昨天", fullTime: "2026/04/12 11:15", category: "內部公告", ref: "HR-ANN-02" },
+                    { id: 5, unread: false, sender: "矽品精密 - 廠務小組", email: "factory@spil.com.tw", subject: "關於第二季度廠區維護時程確認", content: "您好：\n\n隨信檢附第二季度廠區維護的時間預約清單。請貴司工程團隊確認後回覆，若時間不便，我們將協調備用時段。請務必在下週一前完成確認，逾時將由系統自動指派時間。", preview: "隨信檢附第二季度廠區維護的時間預約清單，請貴司工程團隊確認...", time: "2天前", fullTime: "2026/04/11 16:40", category: "廠務維護", ref: "SPIL-MNT-77" },
+                    { id: 6, unread: false, sender: "GitHub Enterprise", email: "noreply@github.com", subject: "Security Alert: Detected CVE on main branch", content: "A high-severity vulnerability has been found in your project's dependencies. \nPackage: lodash (v4.17.20)\nCVE-2021-23337\nPlease update to the latest version immediately to prevent potential prototype pollution attacks.", preview: "A high-severity vulnerability has been found in your dependencies...", time: "2天前", fullTime: "2026/04/11 10:05", category: "資安通報", ref: "GH-SEC-991" },
+                    { id: 7, unread: false, sender: "鼎新電腦 - 客戶經理", email: "erp_service@digiwin.com", subject: "ERP 系統升級計畫方案建議書", content: "陳特助您好：\n\n根據貴司目前的數據成長量，現有的 ERP 版本已接近負載極限。我們建議在第三季啟動雲端化升級計畫。附件提供三種預算方案，請您撥冗審閱，下週二我將拜訪貴司進行實體展示。", preview: "根據貴司目前的數據成長量，現有的 ERP 版本已接近負載極限...", time: "3天前", fullTime: "2026/04/10 14:20", category: "系統升級", ref: "DW-ERP-UP" },
+                    { id: 8, unread: true, sender: "FedEx Express", email: "tracking@fedex.com", subject: "您的跨國樣品包裹已抵達台灣海關", content: "親愛的客戶：\n\n您的運單 (7720199201) 包裹目前正由台灣海關進行進口查驗。請登入官網上傳個案委任書 (POA) 與身分證明文件，以加速清關流程。預計清關完成後 24 小時內送達貴司。", preview: "您的運單包裹目前正由海關進行進口查驗。請上傳個案委任書...", time: "3天前", fullTime: "2026/04/10 09:30", category: "物流進度", ref: "FDX-TR-772" },
+                    { id: 9, unread: false, sender: "LinkedIn 招募中心", email: "recruiter@linkedin.com", subject: "符合您職缺的前端工程師候選人名單", content: "親愛的人資經理：\n\n本週我們發現了 12 位具備 React 與 AI 開發經驗的優秀候選人。其中 3 位曾在台灣一線科技公司任職。您可以直接在招募面板中查閱他們的完整簡歷並發送面試邀請。", preview: "本週我們發現了 12 位具備 React 與 AI 開發經驗的優秀候選人...", time: "4天前", fullTime: "2026/04/09 17:00", category: "人才招聘", ref: "LI-RE-001" },
+                    { id: 10, unread: false, sender: "微軟 Azure Team", email: "billing@microsoft.com", subject: "2026 年 3 月份電子發票開立通知", content: "親愛的客戶：\n\n感謝您使用 Azure。2026 年 3 月份的服務發票已開立，金額為 TWD 45,210。您可透過下方連結下載 PDF 發票與明細表。發票號碼為：AL-99812003。", preview: "2026 年 3 月份的服務發票已開立，金額為 TWD 45,210...", time: "5天前", fullTime: "2026/04/08 11:45", category: "帳務明細", ref: "MS-INV-3" }
+                ],
+                
+                init() {
+                    this.updateUnreadCount();
+                },
+
+                get filteredEmails() {
+                    return this.emails.filter(mail => 
+                        mail.subject.toLowerCase().includes(this.search.toLowerCase()) ||
+                        mail.sender.toLowerCase().includes(this.search.toLowerCase())
+                    );
+                },
+
+                updateUnreadCount() {
+                    this.unreadCount = this.emails.filter(m => m.unread).length;
+                },
+
+                selectEmail(mail) {
+                    this.selectedEmail = mail;
+                    this.summary = '';
+                    if (mail.unread) {
+                        mail.unread = false;
+                        this.updateUnreadCount();
+                    }
+                },
+
+                getTagClass(cat) {
+                    const classes = {
+                        '報價單': 'bg-amber-100 text-amber-700',
+                        '技術警報': 'bg-red-100 text-red-700',
+                        '財務合約': 'bg-green-100 text-green-700',
+                        '內部公告': 'bg-blue-100 text-blue-700',
+                        '廠務維護': 'bg-purple-100 text-purple-700',
+                        '資安通報': 'bg-slate-700 text-white',
+                    };
+                    return classes[cat] || 'bg-gray-100 text-gray-500';
+                },
+
+                summarizeEmail() {
+                    this.isSummarizing = true;
+                    this.summary = '';
+                    
+                    setTimeout(() => {
+                        const s = this.selectedEmail;
+                        // 這裡可以寫更複雜的 AI 邏輯模擬
+                        if (s.id === 1) {
+                            this.summary = "💡 AI 核心摘要：\n\n1. 客戶請求：TSMC 採購組要求提升規格並重新報價。\n2. 關鍵變動：感測組件需升級至 A12 等級。\n3. 緊急期限：今日下班前 (COB) 需回覆。\n\n🚀 建議行動：\n• 立即聯繫技術部確認 A12 組件庫存與成本。\n• 使用「報價模板B」產出新報價單並由總經理簽核。";
+                        } else if (s.id === 2) {
+                            this.summary = "🚨 緊急技術摘要：\n\n1. 問題：AWS CPU 使用率爆滿 (95%+)，持續 3 小時。\n2. 潛在風險：系統全面崩潰，影響用戶訪問。\n3. 行動：立即重啟實例或啟用 Auto-scaling，並檢查最近的程式碼部署日誌。";
+                        } else {
+                            this.summary = `📋 業務快訊：\n\n來自 ${s.sender} 的郵件涉及「${s.category}」。\n主要關於 ${s.subject}，建議在 24 小時內處理完畢以維持良好合作關係。`;
+                        }
+                        this.isSummarizing = false;
+                    }, 1500);
+                }
+            }
+        }
+    </script>
+</body>
+</html>
