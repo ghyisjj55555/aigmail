@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 會議紀錄筆記</title>
+    <style>
+        :root {
+            --primary-color: #4A90E2;
+            --bg-color: #f5f7fa;
+            --text-color: #333;
+            --ai-box-bg: #f0f7ff;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Microsoft JhengHei', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            display: flex;
+            height: 100vh;
+        }
+
+        /* 介面佈局 */
+        .sidebar { width: 250px; background: #2c3e50; color: white; padding: 20px; }
+        .main-content { flex: 1; padding: 40px; display: flex; flex-direction: column; overflow-y: auto; }
+        
+        .note-area {
+            background: white;
+            min-height: 200px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+        }
+
+        /* AI 摘要顯示區域 */
+        #aiSummarySection {
+            display: none; /* 初始隱藏 */
+            background: var(--ai-box-bg);
+            border-left: 5px solid var(--primary-color);
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 10px;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .toolbar { display: flex; gap: 10px; margin-bottom: 20px; }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+
+        .btn-ai { background-color: var(--primary-color); color: white; }
+        .btn-ai:hover { background-color: #357ABD; }
+
+        /* 彈窗樣式 */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal {
+            background: white;
+            width: 420px;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            text-align: center;
+        }
+
+        .permission-item {
+            display: flex;
+            align-items: center;
+            background: #f9f9f9;
+            margin: 15px 0;
+            padding: 12px;
+            border-radius: 8px;
+            text-align: left;
+        }
+
+        .icon { font-size: 24px; margin-right: 15px; }
+        .desc { font-size: 13px; color: #666; line-height: 1.4; }
+        .desc b { color: #333; display: block; margin-bottom: 2px; }
+
+        .modal-footer {
+            margin-top: 25px;
+            display: flex;
+            justify-content: space-around;
+        }
+
+        .btn-allow { background: #27ae60; color: white; width: 140px; }
+        .btn-deny { background: #e74c3c; color: white; width: 140px; }
+
+        .summary-content { line-height: 1.6; color: #444; }
+        .summary-content h3 { color: var(--primary-color); margin-top: 0; }
+        .tag { background: #e1ecf8; color: #4a90e2; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; margin-right: 5px; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <h3>會議清單</h3>
+        <p>● AI Email 2026/04/17</p>
+        <p>○ 產品週會 2026/04/06</p>
+        <p>○ 行銷策略討論</p>
+    </div>
+
+    <div class="main-content">
+        <div class="toolbar">
+            <button class="btn btn-ai" onclick="openModal()">✨ AI 智慧摘要</button>
+            <button class="btn" style="background:#ddd">💾 儲存筆記</button>
+        </div>
+
+        <div class="note-area">
+            <h2 contenteditable="true">AI Email 紀錄</h2>
+            <p contenteditable="true" style="color: #363636;">
+                討論那個公司內部 Email 導入 AI 整理的案子。就是說現在大家每天收件匣都爆掉嘛，業務部那邊反應說他們光是看客人的信就沒時間回報進度了。我剛剛在白板上隨手畫了一下那個流程，你們看這張手寫圖，我們要讓 AI 先讀過所有信件，然後自動把報價單跟客訴分開。對了，那個誰，幫我確認一下我們這款藍芽手寫筆有沒有連上網頁？因為我想直接把這張流程圖存進筆記裡讓 AI 去辨識。還有就是關於定位資訊的紀錄，我們之後如果是在客戶端那邊開會，網頁紀錄要能自動抓到我們是在哪一間分公司，這樣分類才不會亂掉。目前的技術重點在於摘要的精準度，不能把客人的重點漏掉。那個小王，你之後測試的時候，重點放在 AI 能不能把那種很長的往返信件濃縮成三句話就好。大家還有什麼意見嗎？如果沒有的話，我們就先把這個手稿同步上去，等一下點一下那個摘要按鈕，看它能不能把剛剛這堆亂七八糟的討論變成正式的待辦清單。對，藍芽記得要開，不然筆跡傳不過去。好，先這樣，我們趕快試試看這個功能。
+            </p>
+        </div>
+
+        <div id="aiSummarySection">
+            <div class="summary-content">
+                <h3>✨ AI 智慧摘要報告</h3>
+                <div id="summaryText"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal">
+            <h3 style="margin-top:0">硬體權限申請</h3>
+            <p style="color: #666; font-size: 14px;">AI 正在嘗試存取進階會議資訊以優化摘要結果：</p>
+            
+            <div class="permission-item">
+                <span class="icon">✍️</span>
+                <span class="desc"><b>手寫軌跡存取</b>將您的手寫圖表轉化為 AI 可讀取的結構化資料。</span>
+            </div>
+
+            <div class="permission-item">
+                <span class="icon">🔹</span>
+                <span class="desc"><b>藍牙連線</b>搜尋並連接附近的智慧手寫筆或錄音設備。</span>
+            </div>
+
+            <div class="permission-item">
+                <span class="icon">📍</span>
+                <span class="desc"><b>地理定位</b>自動標記會議發生的地點與時區環境資訊。</span>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-deny" onclick="closeModal()">拒絕</button>
+                <button class="btn btn-allow" onclick="handleAllow()">允許並開始摘要</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const modal = document.getElementById('modalOverlay');
+        const summarySection = document.getElementById('aiSummarySection');
+        const summaryText = document.getElementById('summaryText');
+
+        const summaryHTML = `
+            <p><span class="tag">主題</span> <b>AI Email 自動化整理系統導入</b></p>
+            <p><b>📌 核心摘要：</b><br>
+            會議針對業務部門郵件處理負荷過重問題，提議導入 AI 自動分類與摘要技術。重點在於將報價單與客訴自動分流，並將長篇往返郵件濃縮為三句重點。</p>
+            <p><b>🛠️ 硬體整合：</b><br>
+            需透過<b>藍牙手寫筆</b>同步白板上的流程圖手稿進行 AI 辨識，並利用<b>定位功能</b>自動歸檔分公司專案。</p>
+            <p><b>✅ 待辦清單：</b><br>
+            • 小王：測試 AI 對於長信件濃縮的精準度。<br>
+            • 技術部：確保藍牙與定位權限與網頁端的串接穩定性。</p>
+        `;
+
+        function openModal() {
+            modal.style.display = 'flex';
+        }
+
+        function closeModal() {
+            modal.style.display = 'none';
+        }
+
+        function handleAllow() {
+            closeModal();
+            summarySection.style.display = 'block';
+            summaryText.innerHTML = "<i>AI 正在結合手寫軌跡與地點資訊進行分析...</i>";
+            
+            // 模擬 1.5 秒的運算延遲
+            setTimeout(() => {
+                summaryText.innerHTML = summaryHTML;
+                // 自動捲動到底部
+                window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+            }, 1500);
+        }
+
+        window.onclick = function(event) {
+            if (event.target == modal) closeModal();
+        }
+    </script>
+</body>
+</html>
